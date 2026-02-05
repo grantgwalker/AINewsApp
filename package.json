@@ -1,0 +1,33 @@
+{
+  "name": "ainewsapp",
+  "version": "1.0.0",
+  "description": "is a full-stack web application that aggregates live news and social trends based on user interests. Unlike a standard news site, it uses AI to summarize articles, perform sentiment analysis on headlines, and suggest \"deep dive\" topics using an LLM.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/grantgwalker/AINewsApp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/grantgwalker/AINewsApp/issues"
+  },
+  "homepage": "https://github.com/grantgwalker/AINewsApp#readme",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.13.4",
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "pg": "^8.18.0"
+  }
+}
