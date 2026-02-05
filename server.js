@@ -8,6 +8,7 @@ require('dotenv').config();
 
 const newsRoutes = require('./server/routes/news');
 const authRoutes = require('./server/routes/auth');
+const csrfProtection = require('./server/middleware/csrf');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,6 +28,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production', // true in production with HTTPS
     httpOnly: true,
+    sameSite: 'strict', // CSRF protection via SameSite cookie
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
@@ -36,6 +38,9 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(limiter);
+
+// Apply CSRF protection to auth routes
+app.use('/api/auth', csrfProtection);
 
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
