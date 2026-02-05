@@ -1,10 +1,13 @@
 -- Create database schema for InsightStream
 
--- Users table to store user preferences
+-- Users table to store user preferences and authentication
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(100) UNIQUE NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  salt VARCHAR(255) NOT NULL,
+  last_login TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -54,8 +57,31 @@ CREATE TABLE IF NOT EXISTS deep_dive_topics (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- User sessions table for session management
+CREATE TABLE IF NOT EXISTS sessions (
+  id SERIAL PRIMARY KEY,
+  session_id VARCHAR(255) UNIQUE NOT NULL,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  expires_at TIMESTAMP NOT NULL
+);
+
+-- User preferences logging table
+CREATE TABLE IF NOT EXISTS user_preferences (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  preference_key VARCHAR(100) NOT NULL,
+  preference_value TEXT,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, preference_key)
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_articles_category ON articles(category);
 CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_user_interests_user_id ON user_interests(user_id);
 CREATE INDEX IF NOT EXISTS idx_saved_articles_user_id ON saved_articles(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_session_id ON sessions(session_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id ON user_preferences(user_id);
