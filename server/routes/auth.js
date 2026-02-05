@@ -53,14 +53,14 @@ router.post('/register', async (req, res) => {
     }
 
     // Hash password
-    const { hash, salt } = await hashPassword(password);
+    const { hash } = await hashPassword(password);
 
     // Create user
     const result = await pool.query(
-      `INSERT INTO users (username, email, password_hash, salt, created_at, updated_at) 
-       VALUES ($1, $2, $3, $4, NOW(), NOW()) 
+      `INSERT INTO users (username, email, password_hash, created_at, updated_at) 
+       VALUES ($1, $2, $3, NOW(), NOW()) 
        RETURNING id, username, email, created_at`,
-      [username, email, hash, salt]
+      [username, email, hash]
     );
 
     const user = result.rows[0];
@@ -102,7 +102,7 @@ router.post('/login', async (req, res) => {
 
     // Find user
     const result = await pool.query(
-      'SELECT id, username, email, password_hash, salt FROM users WHERE username = $1',
+      'SELECT id, username, email, password_hash FROM users WHERE username = $1',
       [username]
     );
 
@@ -116,7 +116,7 @@ router.post('/login', async (req, res) => {
     const user = result.rows[0];
 
     // Verify password
-    const isValid = await verifyPassword(password, user.password_hash, user.salt);
+    const isValid = await verifyPassword(password, user.password_hash);
     if (!isValid) {
       return res.status(401).json({
         success: false,
@@ -304,6 +304,8 @@ router.get('/preferences', requireAuth, async (req, res) => {
  * Update user preferences
  */
 router.put('/preferences', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  
   try {
     const userId = req.user.id;
     const { preferences } = req.body;
@@ -315,27 +317,48 @@ router.put('/preferences', requireAuth, async (req, res) => {
       });
     }
 
-    // Update or insert each preference
-    for (const [key, value] of Object.entries(preferences)) {
-      await pool.query(
-        `INSERT INTO user_preferences (user_id, preference_key, preference_value, updated_at)
-         VALUES ($1, $2, $3, NOW())
-         ON CONFLICT (user_id, preference_key) 
-         DO UPDATE SET preference_value = $3, updated_at = NOW()`,
-        [userId, key, value]
-      );
+    // Start transaction
+    await client.query('BEGIN');
+
+    // Delete existing preferences for this user
+    await client.query('DELETE FROM user_preferences WHERE user_id = $1', [userId]);
+
+    // Batch insert all preferences
+    if (Object.keys(preferences).length > 0) {
+      const values = [];
+      const params = [];
+      let paramIndex = 1;
+
+      for (const [key, value] of Object.entries(preferences)) {
+        values.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, NOW())`);
+        params.push(userId, key, value);
+        paramIndex += 3;
+      }
+
+      const query = `
+        INSERT INTO user_preferences (user_id, preference_key, preference_value, updated_at)
+        VALUES ${values.join(', ')}
+      `;
+      
+      await client.query(query, params);
     }
+
+    // Commit transaction
+    await client.query('COMMIT');
 
     res.json({
       success: true,
       message: 'Preferences updated successfully'
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Update preferences error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to update preferences'
     });
+  } finally {
+    client.release();
   }
 });
 

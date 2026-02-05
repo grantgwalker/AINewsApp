@@ -32,19 +32,18 @@ function validatePassword(password) {
 }
 
 /**
- * Hash password with salt
+ * Hash password using bcrypt (bcrypt handles salt internally)
  */
 async function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = await bcrypt.hash(password + salt, 10);
-  return { hash, salt };
+  const hash = await bcrypt.hash(password, 10);
+  return { hash };
 }
 
 /**
- * Verify password against hash and salt
+ * Verify password against hash
  */
-async function verifyPassword(password, hash, salt) {
-  return await bcrypt.compare(password + salt, hash);
+async function verifyPassword(password, hash) {
+  return await bcrypt.compare(password, hash);
 }
 
 /**

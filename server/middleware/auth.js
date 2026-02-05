@@ -96,7 +96,19 @@ async function optionalAuth(req, res, next) {
     if (result.rows.length > 0) {
       const session = result.rows[0];
       
-      // Update last activity
+      // Check for inactivity timeout (30 minutes)
+      const inactivityTimeout = 30 * 60 * 1000;
+      const lastActivity = new Date(session.last_activity);
+      const now = new Date();
+      
+      if (now - lastActivity > inactivityTimeout) {
+        // Session timed out - delete and don't attach user
+        await pool.query('DELETE FROM sessions WHERE session_id = $1', [sessionId]);
+        req.session.destroy();
+        return next();
+      }
+
+      // Update last activity only for valid sessions
       await pool.query(
         'UPDATE sessions SET last_activity = NOW() WHERE session_id = $1',
         [sessionId]
