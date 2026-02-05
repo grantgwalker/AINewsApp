@@ -301,7 +301,7 @@ router.get('/preferences', requireAuth, async (req, res) => {
 
 /**
  * PUT /api/auth/preferences
- * Update user preferences
+ * Update user preferences (UPSERT - update existing or insert new)
  */
 router.put('/preferences', requireAuth, async (req, res) => {
   const client = await pool.connect();
@@ -320,27 +320,17 @@ router.put('/preferences', requireAuth, async (req, res) => {
     // Start transaction
     await client.query('BEGIN');
 
-    // Delete existing preferences for this user
-    await client.query('DELETE FROM user_preferences WHERE user_id = $1', [userId]);
-
-    // Batch insert all preferences
+    // Use UPSERT pattern - insert or update each preference
     if (Object.keys(preferences).length > 0) {
-      const values = [];
-      const params = [];
-      let paramIndex = 1;
-
       for (const [key, value] of Object.entries(preferences)) {
-        values.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, NOW())`);
-        params.push(userId, key, value);
-        paramIndex += 3;
+        await client.query(
+          `INSERT INTO user_preferences (user_id, preference_key, preference_value, updated_at)
+           VALUES ($1, $2, $3, NOW())
+           ON CONFLICT (user_id, preference_key)
+           DO UPDATE SET preference_value = $3, updated_at = NOW()`,
+          [userId, key, value]
+        );
       }
-
-      const query = `
-        INSERT INTO user_preferences (user_id, preference_key, preference_value, updated_at)
-        VALUES ${values.join(', ')}
-      `;
-      
-      await client.query(query, params);
     }
 
     // Commit transaction
