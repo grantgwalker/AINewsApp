@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Login to InsightStream - AI News Aggregator">
+    <title>Login - InsightStream</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/auth.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="back-link">
+                <a href="/">← Back to Home</a>
+            </div>
+            
+            <div class="auth-header">
+                <h1>🔐 Sign In</h1>
+                <p>Welcome back to InsightStream</p>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Enter your username" required>
+                    <div class="error-message" id="usernameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
+                    <div class="error-message" id="passwordError"></div>
+                </div>
+
+                <button type="submit" class="btn-auth" id="loginBtn">Sign In</button>
+            </form>
+
+            <div class="auth-footer">
+                Don't have an account? <a href="/register.html">Sign Up</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/login.js"></script>
+</body>
+</html>
